@@ -25,6 +25,18 @@
 
 #include <ctype.h>
 
+extern void global_record_code_coverage(const char* filename, const char* function, const int line);
+
+void
+record_code_coverage(PyFrameObject *f)
+{
+    const char* filename = PyUnicode_AsUTF8(f->f_code->co_filename);
+    const char* function = PyUnicode_AsUTF8(f->f_code->co_name);
+    const int line = PyCode_Addr2Line(f->f_code, f->f_lasti);
+    global_record_code_coverage(filename, function, line);
+}
+
+
 #ifdef Py_DEBUG
 /* For debugging the interpreter: */
 #define LLTRACE  1      /* Low-level trace feature */
@@ -1216,10 +1228,12 @@ main_loop:
            and that all operation that succeed call [FAST_]DISPATCH() ! */
 
         case TARGET(NOP): {
+            record_code_coverage(f);
             FAST_DISPATCH();
         }
 
         case TARGET(LOAD_FAST): {
+            record_code_coverage(f);
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
                 format_exc_check_arg(PyExc_UnboundLocalError,
@@ -1233,6 +1247,7 @@ main_loop:
         }
 
         case TARGET(LOAD_CONST): {
+            record_code_coverage(f);
             PREDICTED(LOAD_CONST);
             PyObject *value = GETITEM(consts, oparg);
             Py_INCREF(value);
@@ -1241,6 +1256,7 @@ main_loop:
         }
 
         case TARGET(STORE_FAST): {
+            record_code_coverage(f);
             PREDICTED(STORE_FAST);
             PyObject *value = POP();
             SETLOCAL(oparg, value);
@@ -1248,12 +1264,14 @@ main_loop:
         }
 
         case TARGET(POP_TOP): {
+            record_code_coverage(f);
             PyObject *value = POP();
             Py_DECREF(value);
             FAST_DISPATCH();
         }
 
         case TARGET(ROT_TWO): {
+            record_code_coverage(f);
             PyObject *top = TOP();
             PyObject *second = SECOND();
             SET_TOP(second);
@@ -1262,6 +1280,7 @@ main_loop:
         }
 
         case TARGET(ROT_THREE): {
+            record_code_coverage(f);
             PyObject *top = TOP();
             PyObject *second = SECOND();
             PyObject *third = THIRD();
@@ -1272,6 +1291,7 @@ main_loop:
         }
 
         case TARGET(ROT_FOUR): {
+            record_code_coverage(f);
             PyObject *top = TOP();
             PyObject *second = SECOND();
             PyObject *third = THIRD();
@@ -1284,6 +1304,7 @@ main_loop:
         }
 
         case TARGET(DUP_TOP): {
+            record_code_coverage(f);
             PyObject *top = TOP();
             Py_INCREF(top);
             PUSH(top);
@@ -1291,6 +1312,7 @@ main_loop:
         }
 
         case TARGET(DUP_TOP_TWO): {
+            record_code_coverage(f);
             PyObject *top = TOP();
             PyObject *second = SECOND();
             Py_INCREF(top);
@@ -1302,6 +1324,7 @@ main_loop:
         }
 
         case TARGET(UNARY_POSITIVE): {
+            record_code_coverage(f);
             PyObject *value = TOP();
             PyObject *res = PyNumber_Positive(value);
             Py_DECREF(value);
@@ -1312,6 +1335,7 @@ main_loop:
         }
 
         case TARGET(UNARY_NEGATIVE): {
+            record_code_coverage(f);
             PyObject *value = TOP();
             PyObject *res = PyNumber_Negative(value);
             Py_DECREF(value);
@@ -1322,6 +1346,7 @@ main_loop:
         }
 
         case TARGET(UNARY_NOT): {
+            record_code_coverage(f);
             PyObject *value = TOP();
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
@@ -1340,6 +1365,7 @@ main_loop:
         }
 
         case TARGET(UNARY_INVERT): {
+            record_code_coverage(f);
             PyObject *value = TOP();
             PyObject *res = PyNumber_Invert(value);
             Py_DECREF(value);
@@ -1350,6 +1376,7 @@ main_loop:
         }
 
         case TARGET(BINARY_POWER): {
+            record_code_coverage(f);
             PyObject *exp = POP();
             PyObject *base = TOP();
             PyObject *res = PyNumber_Power(base, exp, Py_None);
@@ -1362,6 +1389,7 @@ main_loop:
         }
 
         case TARGET(BINARY_MULTIPLY): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Multiply(left, right);
@@ -1374,6 +1402,7 @@ main_loop:
         }
 
         case TARGET(BINARY_MATRIX_MULTIPLY): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_MatrixMultiply(left, right);
@@ -1386,6 +1415,7 @@ main_loop:
         }
 
         case TARGET(BINARY_TRUE_DIVIDE): {
+            record_code_coverage(f);
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *quotient = PyNumber_TrueDivide(dividend, divisor);
@@ -1398,6 +1428,7 @@ main_loop:
         }
 
         case TARGET(BINARY_FLOOR_DIVIDE): {
+            record_code_coverage(f);
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *quotient = PyNumber_FloorDivide(dividend, divisor);
@@ -1410,6 +1441,7 @@ main_loop:
         }
 
         case TARGET(BINARY_MODULO): {
+            record_code_coverage(f);
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *res;
@@ -1430,6 +1462,7 @@ main_loop:
         }
 
         case TARGET(BINARY_ADD): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *sum;
@@ -1456,6 +1489,7 @@ main_loop:
         }
 
         case TARGET(BINARY_SUBTRACT): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *diff = PyNumber_Subtract(left, right);
@@ -1468,6 +1502,7 @@ main_loop:
         }
 
         case TARGET(BINARY_SUBSCR): {
+            record_code_coverage(f);
             PyObject *sub = POP();
             PyObject *container = TOP();
             PyObject *res = PyObject_GetItem(container, sub);
@@ -1480,6 +1515,7 @@ main_loop:
         }
 
         case TARGET(BINARY_LSHIFT): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Lshift(left, right);
@@ -1492,6 +1528,7 @@ main_loop:
         }
 
         case TARGET(BINARY_RSHIFT): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Rshift(left, right);
@@ -1504,6 +1541,7 @@ main_loop:
         }
 
         case TARGET(BINARY_AND): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_And(left, right);
@@ -1516,6 +1554,7 @@ main_loop:
         }
 
         case TARGET(BINARY_XOR): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Xor(left, right);
@@ -1528,6 +1567,7 @@ main_loop:
         }
 
         case TARGET(BINARY_OR): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Or(left, right);
@@ -1540,6 +1580,7 @@ main_loop:
         }
 
         case TARGET(LIST_APPEND): {
+            record_code_coverage(f);
             PyObject *v = POP();
             PyObject *list = PEEK(oparg);
             int err;
@@ -1552,6 +1593,7 @@ main_loop:
         }
 
         case TARGET(SET_ADD): {
+            record_code_coverage(f);
             PyObject *v = POP();
             PyObject *set = PEEK(oparg);
             int err;
@@ -1564,6 +1606,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_POWER): {
+            record_code_coverage(f);
             PyObject *exp = POP();
             PyObject *base = TOP();
             PyObject *res = PyNumber_InPlacePower(base, exp, Py_None);
@@ -1576,6 +1619,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_MULTIPLY): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceMultiply(left, right);
@@ -1588,6 +1632,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_MATRIX_MULTIPLY): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceMatrixMultiply(left, right);
@@ -1600,6 +1645,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_TRUE_DIVIDE): {
+            record_code_coverage(f);
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *quotient = PyNumber_InPlaceTrueDivide(dividend, divisor);
@@ -1612,6 +1658,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_FLOOR_DIVIDE): {
+            record_code_coverage(f);
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *quotient = PyNumber_InPlaceFloorDivide(dividend, divisor);
@@ -1624,6 +1671,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_MODULO): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *mod = PyNumber_InPlaceRemainder(left, right);
@@ -1636,6 +1684,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_ADD): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *sum;
@@ -1655,6 +1704,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_SUBTRACT): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *diff = PyNumber_InPlaceSubtract(left, right);
@@ -1667,6 +1717,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_LSHIFT): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceLshift(left, right);
@@ -1679,6 +1730,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_RSHIFT): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceRshift(left, right);
@@ -1691,6 +1743,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_AND): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceAnd(left, right);
@@ -1703,6 +1756,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_XOR): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceXor(left, right);
@@ -1715,6 +1769,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_OR): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceOr(left, right);
@@ -1727,6 +1782,7 @@ main_loop:
         }
 
         case TARGET(STORE_SUBSCR): {
+            record_code_coverage(f);
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             PyObject *v = THIRD();
@@ -1743,6 +1799,7 @@ main_loop:
         }
 
         case TARGET(DELETE_SUBSCR): {
+            record_code_coverage(f);
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             int err;
@@ -1757,6 +1814,7 @@ main_loop:
         }
 
         case TARGET(PRINT_EXPR): {
+            record_code_coverage(f);
             _Py_IDENTIFIER(displayhook);
             PyObject *value = POP();
             PyObject *hook = _PySys_GetObjectId(&PyId_displayhook);
@@ -1776,6 +1834,7 @@ main_loop:
         }
 
         case TARGET(RAISE_VARARGS): {
+            record_code_coverage(f);
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
@@ -1798,12 +1857,14 @@ main_loop:
         }
 
         case TARGET(RETURN_VALUE): {
+            record_code_coverage(f);
             retval = POP();
             assert(f->f_iblock == 0);
             goto exit_returning;
         }
 
         case TARGET(GET_AITER): {
+            record_code_coverage(f);
             unaryfunc getter = NULL;
             PyObject *iter = NULL;
             PyObject *obj = TOP();
@@ -1850,6 +1911,7 @@ main_loop:
         }
 
         case TARGET(GET_ANEXT): {
+            record_code_coverage(f);
             unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
             PyObject *awaitable = NULL;
@@ -1902,6 +1964,7 @@ main_loop:
         }
 
         case TARGET(GET_AWAITABLE): {
+            record_code_coverage(f);
             PREDICTED(GET_AWAITABLE);
             PyObject *iterable = TOP();
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
@@ -1939,6 +2002,7 @@ main_loop:
         }
 
         case TARGET(YIELD_FROM): {
+            record_code_coverage(f);
             PyObject *v = POP();
             PyObject *receiver = TOP();
             int err;
@@ -1973,6 +2037,7 @@ main_loop:
         }
 
         case TARGET(YIELD_VALUE): {
+            record_code_coverage(f);
             retval = POP();
 
             if (co->co_flags & CO_ASYNC_GENERATOR) {
@@ -1990,6 +2055,7 @@ main_loop:
         }
 
         case TARGET(POP_EXCEPT): {
+            record_code_coverage(f);
             PyObject *type, *value, *traceback;
             _PyErr_StackItem *exc_info;
             PyTryBlock *b = PyFrame_BlockPop(f);
@@ -2014,12 +2080,14 @@ main_loop:
         }
 
         case TARGET(POP_BLOCK): {
+            record_code_coverage(f);
             PREDICTED(POP_BLOCK);
             PyFrame_BlockPop(f);
             DISPATCH();
         }
 
         case TARGET(POP_FINALLY): {
+            record_code_coverage(f);
             /* If oparg is 0 at the top of the stack are 1 or 6 values:
                Either:
                 - TOP = NULL or an integer
@@ -2071,6 +2139,7 @@ main_loop:
         }
 
         case TARGET(CALL_FINALLY): {
+            record_code_coverage(f);
             PyObject *ret = PyLong_FromLong(INSTR_OFFSET());
             if (ret == NULL) {
                 goto error;
@@ -2081,6 +2150,7 @@ main_loop:
         }
 
         case TARGET(BEGIN_FINALLY): {
+            record_code_coverage(f);
             /* Push NULL onto the stack for using it in END_FINALLY,
                POP_FINALLY, WITH_CLEANUP_START and WITH_CLEANUP_FINISH.
              */
@@ -2089,6 +2159,7 @@ main_loop:
         }
 
         case TARGET(END_FINALLY): {
+            record_code_coverage(f);
             PREDICTED(END_FINALLY);
             /* At the top of the stack are 1 or 6 values:
                Either:
@@ -2120,6 +2191,7 @@ main_loop:
         }
 
         case TARGET(END_ASYNC_FOR): {
+            record_code_coverage(f);
             PyObject *exc = POP();
             assert(PyExceptionClass_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
@@ -2140,6 +2212,7 @@ main_loop:
         }
 
         case TARGET(LOAD_BUILD_CLASS): {
+            record_code_coverage(f);
             _Py_IDENTIFIER(__build_class__);
 
             PyObject *bc;
@@ -2171,6 +2244,7 @@ main_loop:
         }
 
         case TARGET(STORE_NAME): {
+            record_code_coverage(f);
             PyObject *name = GETITEM(names, oparg);
             PyObject *v = POP();
             PyObject *ns = f->f_locals;
@@ -2192,6 +2266,7 @@ main_loop:
         }
 
         case TARGET(DELETE_NAME): {
+            record_code_coverage(f);
             PyObject *name = GETITEM(names, oparg);
             PyObject *ns = f->f_locals;
             int err;
@@ -2211,6 +2286,7 @@ main_loop:
         }
 
         case TARGET(UNPACK_SEQUENCE): {
+            record_code_coverage(f);
             PREDICTED(UNPACK_SEQUENCE);
             PyObject *seq = POP(), *item, **items;
             if (PyTuple_CheckExact(seq) &&
@@ -2242,6 +2318,7 @@ main_loop:
         }
 
         case TARGET(UNPACK_EX): {
+            record_code_coverage(f);
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
             PyObject *seq = POP();
 
@@ -2257,6 +2334,7 @@ main_loop:
         }
 
         case TARGET(STORE_ATTR): {
+            record_code_coverage(f);
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
             PyObject *v = SECOND();
@@ -2271,6 +2349,7 @@ main_loop:
         }
 
         case TARGET(DELETE_ATTR): {
+            record_code_coverage(f);
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = POP();
             int err;
@@ -2282,6 +2361,7 @@ main_loop:
         }
 
         case TARGET(STORE_GLOBAL): {
+            record_code_coverage(f);
             PyObject *name = GETITEM(names, oparg);
             PyObject *v = POP();
             int err;
@@ -2293,6 +2373,7 @@ main_loop:
         }
 
         case TARGET(DELETE_GLOBAL): {
+            record_code_coverage(f);
             PyObject *name = GETITEM(names, oparg);
             int err;
             err = PyDict_DelItem(f->f_globals, name);
@@ -2307,6 +2388,7 @@ main_loop:
         }
 
         case TARGET(LOAD_NAME): {
+            record_code_coverage(f);
             PyObject *name = GETITEM(names, oparg);
             PyObject *locals = f->f_locals;
             PyObject *v;
@@ -2370,6 +2452,7 @@ main_loop:
         }
 
         case TARGET(LOAD_GLOBAL): {
+            record_code_coverage(f);
             PyObject *name = GETITEM(names, oparg);
             PyObject *v;
             if (PyDict_CheckExact(f->f_globals)
@@ -2415,6 +2498,7 @@ main_loop:
         }
 
         case TARGET(DELETE_FAST): {
+            record_code_coverage(f);
             PyObject *v = GETLOCAL(oparg);
             if (v != NULL) {
                 SETLOCAL(oparg, NULL);
@@ -2429,6 +2513,7 @@ main_loop:
         }
 
         case TARGET(DELETE_DEREF): {
+            record_code_coverage(f);
             PyObject *cell = freevars[oparg];
             PyObject *oldobj = PyCell_GET(cell);
             if (oldobj != NULL) {
@@ -2441,6 +2526,7 @@ main_loop:
         }
 
         case TARGET(LOAD_CLOSURE): {
+            record_code_coverage(f);
             PyObject *cell = freevars[oparg];
             Py_INCREF(cell);
             PUSH(cell);
@@ -2448,6 +2534,7 @@ main_loop:
         }
 
         case TARGET(LOAD_CLASSDEREF): {
+            record_code_coverage(f);
             PyObject *name, *value, *locals = f->f_locals;
             Py_ssize_t idx;
             assert(locals);
@@ -2486,6 +2573,7 @@ main_loop:
         }
 
         case TARGET(LOAD_DEREF): {
+            record_code_coverage(f);
             PyObject *cell = freevars[oparg];
             PyObject *value = PyCell_GET(cell);
             if (value == NULL) {
@@ -2498,6 +2586,7 @@ main_loop:
         }
 
         case TARGET(STORE_DEREF): {
+            record_code_coverage(f);
             PyObject *v = POP();
             PyObject *cell = freevars[oparg];
             PyObject *oldobj = PyCell_GET(cell);
@@ -2507,6 +2596,7 @@ main_loop:
         }
 
         case TARGET(BUILD_STRING): {
+            record_code_coverage(f);
             PyObject *str;
             PyObject *empty = PyUnicode_New(0, 0);
             if (empty == NULL) {
@@ -2525,6 +2615,7 @@ main_loop:
         }
 
         case TARGET(BUILD_TUPLE): {
+            record_code_coverage(f);
             PyObject *tup = PyTuple_New(oparg);
             if (tup == NULL)
                 goto error;
@@ -2537,6 +2628,7 @@ main_loop:
         }
 
         case TARGET(BUILD_LIST): {
+            record_code_coverage(f);
             PyObject *list =  PyList_New(oparg);
             if (list == NULL)
                 goto error;
@@ -2551,6 +2643,7 @@ main_loop:
         case TARGET(BUILD_TUPLE_UNPACK_WITH_CALL):
         case TARGET(BUILD_TUPLE_UNPACK):
         case TARGET(BUILD_LIST_UNPACK): {
+            record_code_coverage(f);
             int convert_to_tuple = opcode != BUILD_LIST_UNPACK;
             Py_ssize_t i;
             PyObject *sum = PyList_New(0);
@@ -2592,6 +2685,7 @@ main_loop:
         }
 
         case TARGET(BUILD_SET): {
+            record_code_coverage(f);
             PyObject *set = PySet_New(NULL);
             int err = 0;
             int i;
@@ -2613,6 +2707,7 @@ main_loop:
         }
 
         case TARGET(BUILD_SET_UNPACK): {
+            record_code_coverage(f);
             Py_ssize_t i;
             PyObject *sum = PySet_New(NULL);
             if (sum == NULL)
@@ -2632,6 +2727,7 @@ main_loop:
         }
 
         case TARGET(BUILD_MAP): {
+            record_code_coverage(f);
             Py_ssize_t i;
             PyObject *map = _PyDict_NewPresized((Py_ssize_t)oparg);
             if (map == NULL)
@@ -2656,6 +2752,7 @@ main_loop:
         }
 
         case TARGET(SETUP_ANNOTATIONS): {
+            record_code_coverage(f);
             _Py_IDENTIFIER(__annotations__);
             int err;
             PyObject *ann_dict;
@@ -2715,6 +2812,7 @@ main_loop:
         }
 
         case TARGET(BUILD_CONST_KEY_MAP): {
+            record_code_coverage(f);
             Py_ssize_t i;
             PyObject *map;
             PyObject *keys = TOP();
@@ -2748,6 +2846,7 @@ main_loop:
         }
 
         case TARGET(BUILD_MAP_UNPACK): {
+            record_code_coverage(f);
             Py_ssize_t i;
             PyObject *sum = PyDict_New();
             if (sum == NULL)
@@ -2773,6 +2872,7 @@ main_loop:
         }
 
         case TARGET(BUILD_MAP_UNPACK_WITH_CALL): {
+            record_code_coverage(f);
             Py_ssize_t i;
             PyObject *sum = PyDict_New();
             if (sum == NULL)
@@ -2794,6 +2894,7 @@ main_loop:
         }
 
         case TARGET(MAP_ADD): {
+            record_code_coverage(f);
             PyObject *key = TOP();
             PyObject *value = SECOND();
             PyObject *map;
@@ -2811,6 +2912,7 @@ main_loop:
         }
 
         case TARGET(LOAD_ATTR): {
+            record_code_coverage(f);
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
             PyObject *res = PyObject_GetAttr(owner, name);
@@ -2822,6 +2924,7 @@ main_loop:
         }
 
         case TARGET(COMPARE_OP): {
+            record_code_coverage(f);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = cmp_outcome(oparg, left, right);
@@ -2836,6 +2939,7 @@ main_loop:
         }
 
         case TARGET(IMPORT_NAME): {
+            record_code_coverage(f);
             PyObject *name = GETITEM(names, oparg);
             PyObject *fromlist = POP();
             PyObject *level = TOP();
@@ -2850,6 +2954,7 @@ main_loop:
         }
 
         case TARGET(IMPORT_STAR): {
+            record_code_coverage(f);
             PyObject *from = POP(), *locals;
             int err;
             if (PyFrame_FastToLocalsWithError(f) < 0) {
@@ -2873,6 +2978,7 @@ main_loop:
         }
 
         case TARGET(IMPORT_FROM): {
+            record_code_coverage(f);
             PyObject *name = GETITEM(names, oparg);
             PyObject *from = TOP();
             PyObject *res;
@@ -2884,11 +2990,13 @@ main_loop:
         }
 
         case TARGET(JUMP_FORWARD): {
+            record_code_coverage(f);
             JUMPBY(oparg);
             FAST_DISPATCH();
         }
 
         case TARGET(POP_JUMP_IF_FALSE): {
+            record_code_coverage(f);
             PREDICTED(POP_JUMP_IF_FALSE);
             PyObject *cond = POP();
             int err;
@@ -2913,6 +3021,7 @@ main_loop:
         }
 
         case TARGET(POP_JUMP_IF_TRUE): {
+            record_code_coverage(f);
             PREDICTED(POP_JUMP_IF_TRUE);
             PyObject *cond = POP();
             int err;
@@ -2938,6 +3047,7 @@ main_loop:
         }
 
         case TARGET(JUMP_IF_FALSE_OR_POP): {
+            record_code_coverage(f);
             PyObject *cond = TOP();
             int err;
             if (cond == Py_True) {
@@ -2962,6 +3072,7 @@ main_loop:
         }
 
         case TARGET(JUMP_IF_TRUE_OR_POP): {
+            record_code_coverage(f);
             PyObject *cond = TOP();
             int err;
             if (cond == Py_False) {
@@ -2987,6 +3098,7 @@ main_loop:
         }
 
         case TARGET(JUMP_ABSOLUTE): {
+            record_code_coverage(f);
             PREDICTED(JUMP_ABSOLUTE);
             JUMPTO(oparg);
 #if FAST_LOOPS
@@ -3004,6 +3116,7 @@ main_loop:
         }
 
         case TARGET(GET_ITER): {
+            record_code_coverage(f);
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();
             PyObject *iter = PyObject_GetIter(iterable);
@@ -3017,6 +3130,7 @@ main_loop:
         }
 
         case TARGET(GET_YIELD_FROM_ITER): {
+            record_code_coverage(f);
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();
             PyObject *iter;
@@ -3046,6 +3160,7 @@ main_loop:
         }
 
         case TARGET(FOR_ITER): {
+            record_code_coverage(f);
             PREDICTED(FOR_ITER);
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
@@ -3072,6 +3187,7 @@ main_loop:
         }
 
         case TARGET(SETUP_FINALLY): {
+            record_code_coverage(f);
             /* NOTE: If you add any new block-setup opcodes that
                are not try/except/finally handlers, you may need
                to update the PyGen_NeedsFinalizing() function.
@@ -3083,6 +3199,7 @@ main_loop:
         }
 
         case TARGET(BEFORE_ASYNC_WITH): {
+            record_code_coverage(f);
             _Py_IDENTIFIER(__aexit__);
             _Py_IDENTIFIER(__aenter__);
 
@@ -3107,6 +3224,7 @@ main_loop:
         }
 
         case TARGET(SETUP_ASYNC_WITH): {
+            record_code_coverage(f);
             PyObject *res = POP();
             /* Setup the finally block before pushing the result
                of __aenter__ on the stack. */
@@ -3117,6 +3235,7 @@ main_loop:
         }
 
         case TARGET(SETUP_WITH): {
+            record_code_coverage(f);
             _Py_IDENTIFIER(__exit__);
             _Py_IDENTIFIER(__enter__);
             PyObject *mgr = TOP();
@@ -3145,6 +3264,7 @@ main_loop:
         }
 
         case TARGET(WITH_CLEANUP_START): {
+            record_code_coverage(f);
             /* At the top of the stack are 1 or 6 values indicating
                how/why we entered the finally clause:
                - TOP = NULL
@@ -3218,6 +3338,7 @@ main_loop:
         }
 
         case TARGET(WITH_CLEANUP_FINISH): {
+            record_code_coverage(f);
             PREDICTED(WITH_CLEANUP_FINISH);
             /* TOP = the result of calling the context.__exit__ bound method
                SECOND = either None or exception type
@@ -3255,6 +3376,7 @@ main_loop:
         }
 
         case TARGET(LOAD_METHOD): {
+            record_code_coverage(f);
             /* Designed to work in tandem with CALL_METHOD. */
             PyObject *name = GETITEM(names, oparg);
             PyObject *obj = TOP();
@@ -3292,6 +3414,7 @@ main_loop:
         }
 
         case TARGET(CALL_METHOD): {
+            record_code_coverage(f);
             /* Designed to work in tamdem with LOAD_METHOD. */
             PyObject **sp, *res, *meth;
 
@@ -3341,6 +3464,7 @@ main_loop:
         }
 
         case TARGET(CALL_FUNCTION): {
+            record_code_coverage(f);
             PREDICTED(CALL_FUNCTION);
             PyObject **sp, *res;
             sp = stack_pointer;
@@ -3354,6 +3478,7 @@ main_loop:
         }
 
         case TARGET(CALL_FUNCTION_KW): {
+            record_code_coverage(f);
             PyObject **sp, *res, *names;
 
             names = POP();
@@ -3371,6 +3496,7 @@ main_loop:
         }
 
         case TARGET(CALL_FUNCTION_EX): {
+            record_code_coverage(f);
             PyObject *func, *callargs, *kwargs = NULL, *result;
             if (oparg & 0x01) {
                 kwargs = POP();
@@ -3416,6 +3542,7 @@ main_loop:
         }
 
         case TARGET(MAKE_FUNCTION): {
+            record_code_coverage(f);
             PyObject *qualname = POP();
             PyObject *codeobj = POP();
             PyFunctionObject *func = (PyFunctionObject *)
@@ -3449,6 +3576,7 @@ main_loop:
         }
 
         case TARGET(BUILD_SLICE): {
+            record_code_coverage(f);
             PyObject *start, *stop, *step, *slice;
             if (oparg == 3)
                 step = POP();
@@ -3467,6 +3595,7 @@ main_loop:
         }
 
         case TARGET(FORMAT_VALUE): {
+            record_code_coverage(f);
             /* Handles f-string value formatting. */
             PyObject *result;
             PyObject *fmt_spec;
@@ -3527,6 +3656,7 @@ main_loop:
         }
 
         case TARGET(EXTENDED_ARG): {
+            record_code_coverage(f);
             int oldoparg = oparg;
             NEXTOPARG();
             oparg |= oldoparg << 8;

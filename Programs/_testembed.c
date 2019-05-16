@@ -10,6 +10,13 @@
 #include <stdio.h>
 #include <wchar.h>
 
+void global_record_code_coverage(const char* filename, const char* function, const int line)
+{
+    (void)filename;
+    (void)function;
+    (void)line;
+}
+
 /*********************************************************
  * Embedded interpreter tests that need a custom exe
  *
