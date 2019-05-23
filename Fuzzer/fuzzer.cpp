@@ -102,7 +102,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     totalProgram += toPythonArrayString("FuzzerInput", std::vector<uint8_t>(data, data + size));
     totalProgram += target;
 
-    PyRun_SimpleString(totalProgram.c_str());
+    if ( PyRun_SimpleString(totalProgram.c_str()) != 0 ) {
+        /* Abort on unhandled exception */
+        abort();
+    }
 
     return 0;
 }
