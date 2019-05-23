@@ -7,6 +7,9 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <climits>
+#include <cstdlib>
+#include <libgen.h>
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
@@ -29,6 +32,8 @@ extern "C" void global_record_code_coverage(const char* filename, const char* fu
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv) {
     bool inputFileLoaded = false;
+
+    std::string scriptRootPath;
 
     for (int i = 1; i < *argc; i++) {
         const std::string curArgument = std::string((*argv)[i]);
@@ -63,6 +68,17 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv) {
             fclose(fp);
             target = std::string(program.data(), program.data() + program.size());
 
+
+            {
+                /* Resolve script root path */
+                char resolved_path[PATH_MAX+1];
+                if ( realpath(targetFilename.c_str(), resolved_path) == nullptr ) {
+                    printf("Could not resolve full script path. Aborting\n");
+                    abort();
+                }
+                scriptRootPath = std::string(dirname(resolved_path));
+            }
+
             inputFileLoaded = true;
         }
     }
@@ -78,6 +94,19 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv) {
     }
 
     Py_Initialize();
+
+    {
+        std::string setPYTHONPATH;
+        setPYTHONPATH += "import sys";
+        setPYTHONPATH += "\n";
+        setPYTHONPATH += "sys.path.append('" + scriptRootPath + "')";
+        setPYTHONPATH += "\n";
+        if ( PyRun_SimpleString(setPYTHONPATH.c_str()) != 0 ) {
+            printf("Could not set PYTHONPATH. Aborting\n");
+            abort();
+        }
+
+    }
 
     return 0;
 }
