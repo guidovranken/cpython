@@ -1,3 +1,4 @@
 from subdir import puzzle
 
-puzzle.run(FuzzerInput)
+def FuzzerRunOne(FuzzerInput):
+    puzzle.run(FuzzerInput)

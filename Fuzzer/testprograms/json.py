@@ -1,5 +1,8 @@
 import json
-try:
-    json.loads(bytes(FuzzerInput))
-except:
-    pass
+
+def FuzzerRunOne(FuzzerInput):
+    try:
+        l = json.loads(FuzzerInput)
+        return bytes(json.dumps(l).encode())
+    except:
+        pass

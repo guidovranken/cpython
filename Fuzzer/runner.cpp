@@ -66,33 +66,64 @@ Python::Python(const std::string argv0, const std::string scriptPath) {
         }
 
     }
-}
 
-std::string Python::toPythonArrayString(const std::string variableName, const std::vector<uint8_t>& data) {
-    std::stringstream ss;
+    PyObject *pValue, *pModule, *pLocal;
 
-    ss << variableName << " = [";
-    for (size_t i = 0; i < data.size(); i++) {
-        ss << "0x" << std::hex << std::setfill('0') << std::setw(2) << (int)(data[i]) << ", ";
+    pModule = PyModule_New("fuzzermod");
+    PyModule_AddStringConstant(pModule, "__file__", "");
+    pLocal = PyModule_GetDict(pModule);
+    pValue = PyRun_String(code.c_str(), Py_file_input, pLocal, pLocal);
+
+    if ( pValue == nullptr ) {
+        printf("Fatal: Cannot create Python function from string\n");
+        abort();
     }
+    Py_DECREF(pValue);
 
-    ss << "]";
+    pFunc = PyObject_GetAttrString(pModule, "FuzzerRunOne");
 
-    return ss.str() + "\n";
+    if (pFunc == nullptr || !PyCallable_Check(static_cast<PyObject*>(pFunc))) {
+        printf("Fatal: FuzzerRunOne not defined or not callable\n");
+        abort();
+    }
 }
 
 std::optional<std::vector<uint8_t>> Python::Run(const std::vector<uint8_t>& data) {
-    std::string totalProgram;
+    std::optional<std::vector<uint8_t>> ret = std::nullopt;
 
-    totalProgram += toPythonArrayString("FuzzerInput", data);
-    totalProgram += code;
+    PyObject *pArgs, *pValue;
 
-    if ( PyRun_SimpleString(totalProgram.c_str()) != 0 ) {
+    pArgs = PyTuple_New(1);
+    pValue = PyBytes_FromStringAndSize((const char*)data.data(), data.size());
+    PyTuple_SetItem(pArgs, 0, pValue);
+
+    pValue = PyObject_CallObject(static_cast<PyObject*>(pFunc), pArgs);
+
+    if ( pValue == nullptr ) {
         /* Abort on unhandled exception */
+        PyErr_PrintEx(1);
         abort();
     }
 
-    return std::nullopt;
+    if ( PyBytes_Check(pValue) ) {
+        /* Retrieve output */
+
+        uint8_t* output;
+        Py_ssize_t outputSize;
+        if ( PyBytes_AsStringAndSize(pValue, (char**)&output, &outputSize) != -1) {
+            /* Return output */
+            ret = std::vector<uint8_t>(output, output + outputSize);
+            goto end;
+        } else {
+            /* TODO this should not happen */
+        }
+
+    }
+
+end:
+    Py_DECREF(pValue);
+    Py_DECREF(pArgs);
+    return ret;
 }
 
 } /* namespace fuzzing */
