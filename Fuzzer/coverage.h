@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #define COVERAGE_ARRAY_SIZE 65536
 
 extern "C" {
