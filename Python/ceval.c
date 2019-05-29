@@ -25,15 +25,12 @@
 
 #include <ctype.h>
 
-extern void global_record_code_coverage(const char* filename, const char* function, const int line);
+extern void global_record_code_coverage(void* codeptr, int lasti);
 
 void
 record_code_coverage(PyFrameObject *f)
 {
-    const char* filename = PyUnicode_AsUTF8(f->f_code->co_filename);
-    const char* function = PyUnicode_AsUTF8(f->f_code->co_name);
-    const int line = PyCode_Addr2Line(f->f_code, f->f_lasti);
-    global_record_code_coverage(filename, function, line);
+    global_record_code_coverage(f->f_code, f->f_lasti);
 }
 
 

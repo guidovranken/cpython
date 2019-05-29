@@ -3,11 +3,10 @@
 #include "Python.h"
 #include "pycore_pylifecycle.h"
 
-void global_record_code_coverage(const char* filename, const char* function, const int line)
+void global_record_code_coverage(void* codeptr, int lasti)
 {
-    (void)filename;
-    (void)function;
-    (void)line;
+    (void)codeptr;
+    (void)lasti;
 }
 
 #ifdef MS_WINDOWS
